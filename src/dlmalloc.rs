@@ -180,7 +180,7 @@ static_assertions::const_assert!(SBUFF_MAX_OFFSET < 0x10);
 ///
 /// [Chunk::head] is only one field which must be correct for chunk in both states.
 /// In that field we store current chunk size and chunk flag bits.
-/// First seweral bits is always zero in chunk size
+/// First several bits is always zero in chunk size
 /// because size of chunk is always aligned to [MALIGN].
 /// So, in [Chunk::head] we use left bits for size and right bits for flags, see [FLAG_BITS].
 /// 1) First bit is set when prev chunk in memory is in use
@@ -189,12 +189,12 @@ static_assertions::const_assert!(SBUFF_MAX_OFFSET < 0x10);
 /// 3) Third flag currently used only to identify border chunk (see [Segment])
 ///
 /// Half chunks.
-/// Some times there is situations, when [MALIGN]-size chunks are created.
+/// Some times there are situations, when [MALIGN]-size chunks are created.
 /// For example, when we malloc chunk for mem-request
 /// and remainder is < [MIN_CHUNK_SIZE], but >= [MALIGN].
 /// Then we cannot insert this remainder into smallbins, but can mark it as free.
 /// Such chunk won't be used in malloc, but if some neighbor chunk
-/// become free, this two will be merged.
+/// becomes free, these two will be merged.
 ///````
 /// chunk for allocation                  very small remainder
 /// |                                                   \
@@ -221,7 +221,7 @@ struct Chunk {
     next: *mut Chunk,
 }
 
-/// It's structure to store large chunks in tree.
+/// It's a structure to store large chunks in tree.
 /// This structure is stored in chunk memory, when large chunk is free:
 /// ````
 /// chunk beg  chunk info end        chunk end
@@ -252,7 +252,7 @@ struct Chunk {
 /// of the same size are arranged in a circularly-linked list, with only
 /// the oldest chunk (the next to be used, in our FIFO ordering)
 /// actually in the tree.  (Tree members are distinguished by a non-null
-/// parent pointer.)  If a chunk with the same size an an existing node
+/// parent pointer.)  If a chunk with the same size and an existing node
 /// is inserted, it is linked off the existing node using pointers that
 /// work in the same way as fd/bk pointers of small chunks.
 ///
@@ -338,22 +338,22 @@ struct Segment {
 /// * Free     - see [Dlmalloc::free].
 ///
 /// Some facts:
-/// 1) Two neighbor chunks cannot be free in the same time.
-/// If one chunk bacame to be free and there is neighbor free chunk,
-/// then this chunks will be merged.
-/// 2) Cannot be two neigbor segments.
-/// If we allocate new segment in [Dlmalloc::sys_alloc] and there is
-/// neighbor segment in allocator context, then we merge this segments.
-/// 3) [MIN_CHUNK_SIZE] is min size, which in use chunk may have.
-/// Free chunks also may have size == [MALIGN]. This chunks is not
+/// 1) Two neighboring chunks cannot be free in the same time.
+/// If one chunk became to be free and there is a neighboring free chunk,
+/// then these chunks will be merged.
+/// 2) There's no neighboring segments.
+/// If we allocate a new segment in [Dlmalloc::sys_alloc] and there is a
+/// neighboring segment in an allocator context, then we merge these segments.
+/// 3) [MIN_CHUNK_SIZE] is a min size, which in-use chunk may have.
+/// Free chunks also may have size == [MALIGN]. These chunks are not
 /// stored in tree or smallbins and cannot be used in malloc.
-/// But this chunks can be merged with other free neighbor chunk.
+/// But this chunks can be merged with other free neighboring chunk.
 /// see more in [Chunk].
-/// 4) If no heap memory is allocated yet, then dlmalloc use static
+/// 4) If no heap memory is allocated yet, then dlmalloc uses static
 /// buffer for small requests allocations, in order to increase
 /// allocation performance. See more in [Dlmalloc::malloc].
-/// 5) Some memory can be preinistalled by system,
-/// this memory is added in context in [Dlmalloc::sys_alloc] first call.
+/// 5) Some memory can be preinstalled by system,
+/// this memory is added to the context during the first call to [Dlmalloc::sys_alloc].
 ///
 #[repr(align(16))]
 #[repr(C)]
@@ -773,44 +773,44 @@ impl Dlmalloc {
     /// Allocates memory interval which has size > `size` (bigger because of chunk overhead).
     /// In first memory allocation we have no available memory in allocator context.
     ///
-    /// If requested size is small enought then we can use static buffer [Dlmalloc::sbuff]
-    /// and allocate requested size their. This buffer begin addr is aligned by 16 bytes,
-    /// so this must be enought for archs which has pointer size <= 8 bytes, and
-    /// all cells in sbuff is aligned by [MALIGN].
-    /// `Cell` in sbuff is a static memory interval which has const length.
-    /// All cells is numerated by their index. We store offsets and sizes for each
+    /// If requested size is small enough then we can use static buffer [Dlmalloc::sbuff]
+    /// and allocate requested size there. This buffer begin addr is aligned by 16 bytes,
+    /// so this must be enough for archs which have pointer size <= 8 bytes, and
+    /// all cells in sbuff are aligned by [MALIGN].
+    /// `Cell` in sbuff is a static memory interval which has a const length.
+    /// All cells are numbered by their index. We store offsets and sizes for each
     /// cell in [SBUFF_IDX_OFFSETS] and [SBUFF_IDX_SIZES].
     ///
-    /// If there is no free cells in static buffer or requested size is not small enought,
-    /// then we request system for memory interval bigger then [DEFAULT_GRANULARITY].
-    /// This memory is added as segment in segments list, head is [Dlmalloc::seg].
+    /// If there is no free cells in static buffer or requested size is not small enough,
+    /// then we request system for memory interval bigger than [DEFAULT_GRANULARITY].
+    /// This memory is added as segment in segment list, head is [Dlmalloc::seg].
     /// see more in [Dlmalloc::sys_alloc]
     /// So, after that there is some available memory in allocator context.
-    /// Algorithm has four ways how to allocate requested mem using available segments:
+    /// Algorithm has four ways to allocate requested mem using available segments:
     /// 1) Use top chunk: [Dlmalloc::top] and [Dlmalloc::topsize].
     ///    Top chunk has the biggest addr between all other chunks in same segment.
     ///    It is created when new segment is alloced from system.
-    ///    All memory from new segment becames to be top.
-    ///    Old top (if there is one) in that case becames to be common chunk.
+    ///    All memory from new segment becomes a top.
+    ///    Old top (if there is one) in that case becomes a common chunk.
     /// 2) Use dv chunk: [Dlmalloc::dv] and [Dlmalloc::dvsize].
     ///    Dv chunk is created when some bigger size chunk is used to allocate
-    ///    small chunk. Then remainder bacame dv (except if it is top, top stay top).
+    ///    small chunk. Then remainder becomes dv (except if it is top, top remains top).
     /// 3) Use tree: [Dlmalloc::treemap] and [Dlmalloc::treebins].
-    ///    All big chunks (see tag_big_chunk), which is created during allocator work,
-    ///    are saved in tree. In fact it is [NTREEBINS] number of trees, where each tree
+    ///    All big chunks (see tag_big_chunk), which are created during allocator work,
+    ///    are saved in tree. In fact, it is [NTREEBINS] number of trees, where each tree
     ///    is for corresponding size range. Each tree is sorted by size binary tree.
     /// 4) Use smallbins: [Dlmalloc::smallbins] and [Dlmalloc::smallmap].
-    ///    Each smallbin is list of chunks have equal small size:
+    ///    Each smallbin is list of chunks having equal small size:
     ///    zero bin is for less then 8 bytes (never used), first for 8, second for 16, 24, 32 and e.t.c.
-    ///    Note: some bins is never used, it depends on [PTR_SIZE] value.
+    ///    Note: some bins are never used, it depends on [PTR_SIZE] value.
     ///    TODO: fix it, see also [Dlmalloc::small_index].
     /// All these ways have following priority:
-    /// 1) if there is small bin with exatly same size as requested, then use it
-    /// 2) use dv chunk if can
-    /// 3) use most suitable chunk from smallbins if can
-    /// 4) use chunks from tree if can
-    /// 5) use top chunk if can
-    /// 6) if all ways above do not works then alloc new memory from system.
+    /// 1) if there is small bin with exactly same size as requested, then use it
+    /// 2) use dv chunk if possible
+    /// 3) use most suitable chunk from smallbins if possible
+    /// 4) use chunks from tree if possible
+    /// 5) use top chunk if possible
+    /// 6) if all ways above do not work, then alloc new memory from system.
     pub unsafe fn malloc(&mut self, size: usize) -> *mut u8 {
         dlverbose!("{}", VERBOSE_DEL);
         dlverbose!("MALLOC CALL: size = 0x{:x}", size);

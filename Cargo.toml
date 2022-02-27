@@ -32,6 +32,12 @@ static_assertions = "1.1"
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 page_size = "0.4.2"
 
+[dependencies.windows]
+windows = "0.33.0"
+features = [
+    "Win32_System_Memory"
+]
+
 [dev-dependencies]
 rand = "0.7.3"
 
