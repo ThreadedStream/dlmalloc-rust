@@ -8,8 +8,8 @@ pub fn align_up(a: usize, alignment: usize) -> usize {
 }
 
 /// Returns max number which is <= `a` and aligned by `alignment`
-pub fn align_down(a: usize, alignemnt: usize) -> usize {
-    (a / alignemnt) * alignemnt
+pub fn align_down(a: usize, alignment: usize) -> usize {
+    (a / alignment) * alignment
 }
 
 /// Returns cropped memory interval in which memory can be successfully freed.

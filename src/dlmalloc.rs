@@ -403,7 +403,7 @@ pub const DLMALLOC_INIT: Dlmalloc = Dlmalloc {
     top: 0 as *mut _,
     seg: 0 as *mut _,
     sbuff: [0; SBUFF_SIZE],
-    sbuff_mask: 0,
+    sbuff_mask:  0,
     preinstallation_is_done: false,
     least_addr: 0 as *mut _,
 };
@@ -1575,19 +1575,23 @@ impl Dlmalloc {
     }
 
     /// Unlinks and returns last chunk from small chunks list
-    unsafe fn unlink_last_small_chunk(&mut self, head: *mut Chunk, idx: u32) -> *mut Chunk {
-        let chunk = (*head).prev;
-        let new_first_chunk = (*chunk).prev;
-        dlassert!(chunk != head);
-        dlassert!(chunk != new_first_chunk);
-        dlassert!(Chunk::size(chunk) == self.small_index2size(idx));
-        if head == new_first_chunk {
-            self.clear_smallmap(idx);
-        } else {
-            (*new_first_chunk).next = head;
-            (*head).prev = new_first_chunk;
-        }
-        chunk
+    unsafe fn unlink_last_small_chunk(&mut self, head: *mut Chunk, next: *mut Chunk, idx: u32) -> *mut Chunk {
+        // let chunk = (*head).prev;
+        // let new_first_chunk = (*chunk).prev;
+        // dlassert!(chunk != head);
+        // dlassert!(chunk != new_first_chunk);
+        // dlassert!(Chunk::size(chunk) == self.small_index2size(idx));
+        // if head == new_first_chunk {
+        //     self.clear_smallmap(idx);
+        // } else {
+        //     (*new_first_chunk).next = head;
+        //     (*head).prev = new_first_chunk;
+        // }
+        // chunk
+        let ptr = (*next).prev;
+        dlassert!(next != head);
+        dlassert!(next != ptr);
+        dlassert(Chunk::size(chunk) == self.small_index2size(idx))
     }
 
     /// Replaces [Dlmalloc::dv] to given `chunk`.
